@@ -1,19 +1,30 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+// Helper to check if URL is valid
+const isValidUrl = (url: string): boolean => {
+  try {
+    return url.startsWith('http://') || url.startsWith('https://');
+  } catch {
+    return false;
+  }
+};
+
 export async function GET() {
   try {
-    // Use service role client to bypass RLS
-    const serviceSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-      { auth: { persistSession: false } }
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-    if (!serviceSupabase) {
-      console.error('Supabase not configured');
-      return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
+    // Check if Supabase is configured
+    if (!supabaseUrl || !serviceRoleKey || !isValidUrl(supabaseUrl)) {
+      console.warn('Supabase not properly configured, returning empty braiders list');
+      return NextResponse.json([]);
     }
+
+    // Use service role client to bypass RLS
+    const serviceSupabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
+    });
 
     console.log('Fetching braiders from braider_profiles table...');
 
